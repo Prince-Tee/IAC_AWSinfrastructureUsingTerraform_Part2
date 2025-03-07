@@ -1,4 +1,4 @@
-# Automate Infrastructure With IaC using Terraform- PART 2
+# Automate Infrastructure With IaC using Terraform-PART2
 
 Welcome to the world of Infrastructure as Code (IaC) with Terraform! In this guide, we will walk you through the process of automating the creation of AWS resources using Terraform.
 
@@ -45,7 +45,7 @@ provider "aws" {
   region = var.region
 }
 ```
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/CREATE%20VPC.PNG)
 
 Create a new file vpc.tf, populate it with this content:
 ```hcl
@@ -68,7 +68,7 @@ resource "aws_vpc" "main" {
 
 }
 ```
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/content%20of%20vpc%20tf.PNG)
 
 ### Private Subnets & Best Practices
 
@@ -130,7 +130,7 @@ resource "aws_subnet" public {
 }
 
 ```
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/creating%20subnets.PNG)
 
 ### **Line-by-Line Explanation for dynamically Creating Private Subnets**
 
@@ -233,7 +233,7 @@ variable "tags"{
     }
 }
 ```
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/content%20of%20variable%20tf.PNG)
 ### **Variables Explained**
 
 1. **`region`**  
@@ -273,7 +273,7 @@ tags = {
     Project     = "PBL"
 }
 ```
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/terraform%20tvfars.PNG)
 ### **Variable Values Explained**
 
 1. **`region`**  
@@ -303,8 +303,9 @@ tags = {
 
 Now let's run terraform apply and see what gets created from our aws console.
 
-(screenshot)
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/out%20whole%20network%20has%20been%20set%20up.PNG)
+
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Subnets%20Created%20in%20AWS%20Console.PNG)
 
 ### Tagging
 
@@ -343,7 +344,7 @@ resource "aws_internet_gateway" "igw" {
     )
 }
 ```
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/content%20of%20internet%20gateway.PNG)
 ### **Explanation of the above code**
 
 1. **`resource "aws_internet_gateway" "igw" {`**  
@@ -358,10 +359,10 @@ resource "aws_internet_gateway" "igw" {
    - **`format()`**: Dynamically generates a unique name for the IGW by combining the VPC's name (from its tags) with the string `"IGW"`.
 
 Terraform Plan and apply Showing IGW Creation
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Terraform%20Plan%20and%20apply%20Showing%20IGW%20Creation.PNG)
 
 Internet Gateway Created in AWS Console
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Internet%20Gateway%20Created%20in%20AWS%20Console.PNG)
 
 ### NAT Gateways
 
@@ -398,7 +399,7 @@ resource "aws_nat_gateway" "nat" {
   )
 }
 ```
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/content%20of%20nat%20gateway.PNG)
 ### create an **Elastic IP (EIP)** and a **NAT Gateway** in AWS.
 
 1. **Elastic IP (EIP)**  
@@ -413,13 +414,13 @@ resource "aws_nat_gateway" "nat" {
    - **`tags`**: Tags are applied to the NAT Gateway for better organization and management. The `format()` function dynamically generates a unique name for the NAT Gateway using the `var.name` variable.
 
 NAT Gateway and EIP Configuration in Terraform
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/NAT%20Gateway%20and%20EIP%20Configuration%20in%20Terraform.PNG)
 
 Elastic IP Created in AWS Console
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Elastic%20IP%20Created%20in%20AWS%20Console.PNG)
 
 NAT Gateway Created in AWS Console
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/NAT%20Gateway%20Created%20in%20AWS%20Console.PNG)
 
 ### AWS Routes
 
