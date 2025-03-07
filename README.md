@@ -130,6 +130,7 @@ resource "aws_subnet" public {
 }
 
 ```
+(screenshot)
 
 ### **Line-by-Line Explanation for dynamically Creating Private Subnets**
 
@@ -165,7 +166,7 @@ resource "aws_subnet" public {
    - **`format("Private-Subnet-%s", count.index + 1)`**: Dynamically generates a unique name for each subnet (e.g., `Private-Subnet-1`, `Private-Subnet-2`).
 
 
-### **Line-by-Line Explanation dynamically Creating Public Subnets**
+### **Line-by-Line Explanation for dynamically Creating Public Subnets**
 
 1. **`resource "aws_subnet" "public" {`**  
    - Declares a Terraform resource of type `aws_subnet` named `public`. This will create public subnets in AWS.
@@ -232,6 +233,7 @@ variable "tags"{
     }
 }
 ```
+(screenshot)
 ### **Variables Explained**
 
 1. **`region`**  
@@ -266,11 +268,12 @@ preferred_number_of_private_subnets = 4
 preferred_number_of_public_subnets = 2
 tags = {
     Environment = "production"
-    Owner       = "taiwo@kosenuel.com"
+    Owner       = "taiwo@adebiyi.com"
     Terraform   = "true"
     Project     = "PBL"
 }
 ```
+(screenshot)
 ### **Variable Values Explained**
 
 1. **`region`**  
@@ -294,10 +297,14 @@ tags = {
 7. **`tags`**  
    - Tags are applied to all resources for better organization and management. The tags include:  
      - `Environment = "production"`  
-     - `Owner = "taiwo@kosenuel.com"`  
+     - `Owner = "taiwo@adebiyi.com"`  
      - `Terraform = "true"`  
      - `Project = "PBL"`
 
+Now let's run terraform apply and see what gets created from our aws console.
+
+(screenshot)
+(screenshot)
 
 ### Tagging
 
@@ -322,32 +329,52 @@ tags = merge(
 An Internet Gateway (IGW) allows resources in a VPC to connect to the internet.
 
 #### Creating an Internet Gateway
+Create a new file internet_gateway.tf with below content:
 
 ```hcl
-resource "aws_internet_gateway" "ig" {
-  vpc_id = aws_vpc.main.id
+resource "aws_internet_gateway" "igw" {
+    vpc_id = aws_vpc.main.id
 
-  tags = merge(
-    var.tags,
-    {
-      Name = format("%s-%s!", aws_vpc.main.id, "IG")
-    },
-  )
+    tags = merge(
+        var.tags,
+        {
+            Name = format("%s-%s", aws_vpc.main.tags["Name"], "IGW")
+        }
+    )
 }
 ```
+(screenshot)
+### **Explanation of the above code**
 
-- **format()**: This function dynamically generates a unique name for the Internet Gateway by combining the VPC ID and the string "IG".
+1. **`resource "aws_internet_gateway" "igw" {`**  
+   - Declares a Terraform resource of type `aws_internet_gateway` named `igw`. This will create an Internet Gateway in AWS.
+
+2. **`vpc_id = aws_vpc.main.id`**  
+   - Attaches the IGW to the VPC created earlier (`aws_vpc.main`). This links the IGW to the VPC, enabling internet access for resources within the VPC.
+
+3. **`tags = merge(var.tags, { Name = format("%s-%s", aws_vpc.main.tags["Name"], "IGW") })`**  
+   - Adds tags to the IGW for better organization and management.  
+   - **`merge()`**: Combines the default tags (`var.tags`) with a resource-specific tag (`Name`).  
+   - **`format()`**: Dynamically generates a unique name for the IGW by combining the VPC's name (from its tags) with the string `"IGW"`.
+
+Terraform Plan and apply Showing IGW Creation
+(screenshot)
+
+Internet Gateway Created in AWS Console
+(screenshot)
 
 ### NAT Gateways
 
 A NAT Gateway allows instances in a private subnet to connect to the internet while preventing the internet from initiating connections with those instances.
 
-#### Creating a NAT Gateway
+#### Creating Elastic IP and NAT Gateway
+Create a new file natgateway.tf:
 
 ```hcl
+# Create Elastic IP for NAT Gateway
 resource "aws_eip" "nat_eip" {
-  vpc        = true
-  depends_on = [aws_internet_gateway.ig]
+  domain = "vpc"
+  depends_on = [aws_internet_gateway.igw]
 
   tags = merge(
     var.tags,
@@ -357,10 +384,11 @@ resource "aws_eip" "nat_eip" {
   )
 }
 
+# Create NAT Gateway
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat_eip.id
   subnet_id     = element(aws_subnet.public.*.id, 0)
-  depends_on    = [aws_internet_gateway.ig]
+  depends_on    = [aws_internet_gateway.igw]
 
   tags = merge(
     var.tags,
@@ -370,8 +398,28 @@ resource "aws_nat_gateway" "nat" {
   )
 }
 ```
+(screenshot)
+### create an **Elastic IP (EIP)** and a **NAT Gateway** in AWS.
 
-- **depends_on**: This ensures that the Internet Gateway is created before the NAT Gateway.
+1. **Elastic IP (EIP)**  
+   - **`domain = "vpc"`**: The EIP is created for use within the VPC.  
+   - **`depends_on = [aws_internet_gateway.igw]`**: Ensures the Internet Gateway (IGW) is created before the EIP.  
+   - **`tags`**: Tags are applied to the EIP for better organization and management. The `format()` function dynamically generates a unique name for the EIP using the `var.name` variable.
+
+2. **NAT Gateway**  
+   - **`allocation_id = aws_eip.nat_eip.id`**: Associates the NAT Gateway with the EIP created earlier.  
+   - **`subnet_id = element(aws_subnet.public.*.id, 0)`**: Places the NAT Gateway in the first public subnet.  
+   - **`depends_on = [aws_internet_gateway.igw]`**: Ensures the Internet Gateway (IGW) is created before the NAT Gateway.  
+   - **`tags`**: Tags are applied to the NAT Gateway for better organization and management. The `format()` function dynamically generates a unique name for the NAT Gateway using the `var.name` variable.
+
+NAT Gateway and EIP Configuration in Terraform
+(screenshot)
+
+Elastic IP Created in AWS Console
+(screenshot)
+
+NAT Gateway Created in AWS Console
+(screenshot)
 
 ### AWS Routes
 
