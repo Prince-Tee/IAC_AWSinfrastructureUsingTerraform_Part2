@@ -427,28 +427,119 @@ NAT Gateway Created in AWS Console
 Routes define how traffic is directed within a VPC. We will create route tables for both public and private subnets.
 
 #### Creating Route Tables
+Let's create route tables for both public and private subnets. Create a new file route_tables.tf:
 
 ```hcl
+# Create Private Route Table
 resource "aws_route_table" "private-rtb" {
   vpc_id = aws_vpc.main.id
 
+  route {
+    cidr_block = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat.id
+  }
   tags = merge(
     var.tags,
     {
-      Name = format("%s-Private-Route-Table", var.name)
-    },
+      Name = format("%s-Private-Route-Table", var.tags["Environment"])
+    }
   )
 }
 
+# Private Subnet Associations
 resource "aws_route_table_association" "private-subnets-assoc" {
   count          = length(aws_subnet.private[*].id)
   subnet_id      = element(aws_subnet.private[*].id, count.index)
   route_table_id = aws_route_table.private-rtb.id
 }
+
+# Public Route Table
+resource "aws_route_table" "public-rtb" {
+  vpc_id = aws_vpc.main.id
+
+  tags = merge(
+    var.tags,
+    {
+      Name = format("%s-Public-Route-Table", var.name)
+    },
+  )
+}
+
+# Public Route
+resource "aws_route" "public-rtb-route" {
+  route_table_id         = aws_route_table.public-rtb.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.igw.id
+}
+
+# Public Subnet Associations
+resource "aws_route_table_association" "public-subnets-assoc" {
+  count          = length(aws_subnet.public[*].id)
+  subnet_id      = element(aws_subnet.public[*].id, count.index)
+  route_table_id = aws_route_table.public-rtb.id
+}
 ```
 
-- **aws_route_table**: This creates a route table for private subnets.
-- **aws_route_table_association**: This associates the private subnets with the route table.
+(screenshot)
+
+This section explains the Terraform code used to create **private** and **public route tables** and associate them with subnets.
+
+---
+
+### **1. Private Route Table**
+
+- **`vpc_id`**: Associates the route table with the VPC.  
+- **`route`**: Adds a route to the route table.  
+  - **`cidr_block = "0.0.0.0/0"`**: Routes all traffic (0.0.0.0/0) to the NAT Gateway.  
+  - **`nat_gateway_id`**: Specifies the NAT Gateway for the route.  
+- **`tags`**: Adds tags to the route table.  
+  - **`format()`**: Dynamically generates a name for the route table using the `Environment` tag.
+
+---
+
+### **2. Private Subnet Associations**
+
+- **`count`**: Creates an association for each private subnet.  
+- **`subnet_id`**: Associates each private subnet with the private route table.  
+- **`route_table_id`**: Specifies the private route table to associate with.
+
+---
+
+### **3. Public Route Table**
+
+- **`vpc_id`**: Associates the route table with the VPC.  
+- **`tags`**: Adds tags to the route table.  
+  - **`format()`**: Dynamically generates a name for the route table using `var.name`.
+
+---
+
+### **4. Public Route**
+
+- **`route_table_id`**: Specifies the public route table.  
+- **`destination_cidr_block = "0.0.0.0/0"`**: Routes all traffic (0.0.0.0/0) to the Internet Gateway.  
+- **`gateway_id`**: Specifies the Internet Gateway for the route.
+
+---
+
+### **5. Public Subnet Associations**
+
+- **`count`**: Creates an association for each public subnet.  
+- **`subnet_id`**: Associates each public subnet with the public route table.  
+- **`route_table_id`**: Specifies the public route table to associate with.
+
+Route Tables Configuration in Terraform
+(screenshot)
+
+Route Tables Created in AWS Console
+(screenshot)
+
+### Public Route Table Details
+(screenshot)
+(screenshot)
+
+### Private Route Table Details
+(screenshot)
+(screenshot)
 
 ## AWS Identity and Access Management (IAM)
 
@@ -459,17 +550,18 @@ IAM allows you to manage access to AWS services and resources securely.
 An IAM role is an identity that you can assume to gain temporary access to AWS resources.
 
 #### Creating an IAM Role
+Create a new file roles-and-policy.tf:
 
 ```hcl
 resource "aws_iam_role" "ec2_instance_role" {
   name = "ec2_instance_role"
-
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
         Action = "sts:AssumeRole"
         Effect = "Allow"
+        Sid    = ""
         Principal = {
           Service = "ec2.amazonaws.com"
         }
@@ -485,43 +577,185 @@ resource "aws_iam_role" "ec2_instance_role" {
   )
 }
 ```
+Explaining the Terraform code used to create an **IAM Role** in AWS.
 
-- **assume_role_policy**: This policy allows EC2 instances to assume the role.
+
+1. **`resource "aws_iam_role" "ec2_instance_role" {`**  
+   - Declares a Terraform resource of type `aws_iam_role` named `ec2_instance_role`. This will create an IAM Role in AWS.
+
+2. **`name = "ec2_instance_role"`**  
+   - Specifies the name of the IAM Role as `ec2_instance_role`.
+
+3. **`assume_role_policy = jsonencode({ ... })`**  
+   - Defines the trust policy for the IAM Role using JSON.  
+   - **`jsonencode()`**: Converts the policy into JSON format.
+
+4. **`Version = "2012-10-17"`**  
+   - Specifies the version of the policy language.
+
+5. **`Statement = [ ... ]`**  
+   - Defines the permissions for the IAM Role.  
+   - **`Action = "sts:AssumeRole"`**: Allows the `ec2.amazonaws.com` service to assume this role.  
+   - **`Effect = "Allow"`**: Grants permission to assume the role.  
+   - **`Principal = { Service = "ec2.amazonaws.com" }`**: Specifies that EC2 instances can assume this role.
+
+6. **`tags = merge(var.tags, { Name = "aws assume role" })`**  
+   - Adds tags to the IAM Role for better organization and management.  
+   - **`merge()`**: Combines the default tags (`var.tags`) with a resource-specific tag (`Name`).  
+   - **`Name = "aws assume role"`**: Assigns a name tag to the role.
+
+(screenshot)
 
 ### IAM Policies
 
 IAM policies define permissions for actions that can be performed on AWS resources.
 
-#### Creating an IAM Policy
+#### Creating an IAM Policy Inside the same file
 
 ```hcl
-resource "aws_iam_policy" "policy" {
-  name        = "ec2_instance_policy"
-  description = "A test policy"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "ec2:Describe*",
+# Create a resource role
+resource  "aws_iam_role" "ec2_instance_role"{
+    name = "ec2_instance_role"
+    assume_role_policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+            {
+                Action      = "sts:AssumeRole"
+                Effect      = "Allow"
+                Sid         = ""
+                Principal   = {
+                    Service = "ec2.amazonaws.com"
+                }
+            }
         ]
-        Effect   = "Allow"
-        Resource = "*"
-      },
-    ]
-  })
+    })
 
-  tags = merge(
-    var.tags,
-    {
-      Name = "aws assume policy"
-    },
-  )
+    tags = merge(
+        var.tags,
+        {
+            Name = "aws assume role"
+        }
+    )
+}
+
+# Create an IAM Policy
+resource "aws_iam_policy" "ec2_policy" {
+    name                    = "ec2_instance_policy"
+    description             = "This is a policy to grant access to all ec2 resource(s)" 
+    policy                  = jsonencode({
+        Version             = "2012-10-17"
+        Statement           =[
+            {
+                Action      = [
+                    "ec2:Describe*"
+                ]
+                Effect      = "Allow"
+                Resource    = "*"
+            }
+        ]
+    })
+
+    tags = merge(
+        var.tags,
+        {
+            Name    = "aws assume policy"
+        }
+    )
+}
+
+# Create KMS decrypt policy
+resource "aws_iam_role_policy" "efs_kms_decrypt" {
+    name = "AllowEFSToDecryptKMSKey"
+    role = aws_iam_role.ec2_instance_role.name
+    
+    policy = jsonencode({
+        Version          = "2012-10-17"
+        Statement        = [
+            {
+                Action   = "kms:Decrypt"
+                Effect   = "Allow"
+                Resource = aws_kms_key.project-kms.arn
+            }
+        ]
+    })
 }
 ```
+Explaining the Terraform code used to create **IAM Policies** in AWS.
 
-- **policy**: This policy allows the EC2 instance to describe EC2 resources.
+### **1. Create an IAM Policy for EC2**
+
+1. **`resource "aws_iam_policy" "ec2_policy" {`**  
+   - Declares a Terraform resource of type `aws_iam_policy` named `ec2_policy`. This will create an IAM Policy in AWS.
+
+2. **`name = "ec2_instance_policy"`**  
+   - Specifies the name of the IAM Policy as `ec2_instance_policy`.
+
+3. **`description = "This is a policy to grant access to all ec2 resource(s)"`**  
+   - Provides a description of the policy.
+
+4. **`policy = jsonencode({ ... })`**  
+   - Defines the permissions for the IAM Policy using JSON.  
+   - **`jsonencode()`**: Converts the policy into JSON format.
+
+5. **`Version = "2012-10-17"`**  
+   - Specifies the version of the policy language.
+
+6. **`Statement = [ ... ]`**  
+   - Defines the permissions for the IAM Policy.  
+   - **`Action = ["ec2:Describe*"]`**: Allows the `Describe*` action on all EC2 resources.  
+   - **`Effect = "Allow"`**: Grants permission for the action.  
+   - **`Resource = "*"`**: Applies the permission to all EC2 resources.
+
+7. **`tags = merge(var.tags, { Name = "aws assume policy" })`**  
+   - Adds tags to the IAM Policy for better organization and management.  
+   - **`merge()`**: Combines the default tags (`var.tags`) with a resource-specific tag (`Name`).  
+   - **`Name = "aws assume policy"`**: Assigns a name tag to the policy.
+
+### **2. Create a KMS Decrypt Policy**
+
+1. **`resource "aws_iam_role_policy" "efs_kms_decrypt" {`**  
+   - Declares a Terraform resource of type `aws_iam_role_policy` named `efs_kms_decrypt`. This will attach a policy to an IAM Role.
+
+2. **`name = "AllowEFSToDecryptKMSKey"`**  
+   - Specifies the name of the policy as `AllowEFSToDecryptKMSKey`.
+
+3. **`role = aws_iam_role.ec2_instance_role.name`**  
+   - Attaches the policy to the IAM Role (`ec2_instance_role`).
+
+4. **`policy = jsonencode({ ... })`**  
+   - Defines the permissions for the policy using JSON.  
+   - **`jsonencode()`**: Converts the policy into JSON format.
+
+5. **`Version = "2012-10-17"`**  
+   - Specifies the version of the policy language.
+
+6. **`Statement = [ ... ]`**  
+   - Defines the permissions for the policy.  
+   - **`Action = "kms:Decrypt"`**: Allows the `Decrypt` action on the specified KMS key.  
+   - **`Effect = "Allow"`**: Grants permission for the action.  
+   - **`Resource = aws_kms_key.project-kms.arn`**: Specifies the KMS key that can be decrypted.
+(screenshot)
+
+### Attaching Policy to Role in the same File
+```hcl
+resource "aws_iam_role_policy_attachment" "test-attach" {
+  role       = aws_iam_role.ec2_instance_role.name
+  policy_arn = aws_iam_policy.ec2_policy.arn
+}
+```
+Explaining the Terraform code used to attach an **IAM Policy** to an **IAM Role**.
+
+1. **`resource "aws_iam_role_policy_attachment" "test-attach" {`**  
+   - Declares a Terraform resource of type `aws_iam_role_policy_attachment` named `test-attach`. This will attach an IAM Policy to an IAM Role.
+
+2. **`role = aws_iam_role.ec2_instance_role.name`**  
+   - Specifies the IAM Role to which the policy will be attached.  
+   - References the role named `ec2_instance_role`.
+
+3. **`policy_arn = aws_iam_policy.ec2_policy.arn`**  
+   - Specifies the ARN (Amazon Resource Name) of the IAM Policy to attach.  
+   - References the policy named `policy`.
+(screenshot)
 
 ### Instance Profiles
 
@@ -535,7 +769,59 @@ resource "aws_iam_instance_profile" "ip" {
   role = aws_iam_role.ec2_instance_role.name
 }
 ```
+(screenshot)
 
+IAM Roles and Policies in the Code Phase after tf-plan and tf-apply
+(screenshot)
+
+If you encounter and Error "aws_kms_key.project-kms Not Declared"
+Solution:
+Declare the aws_kms_key resource in your variables.tf configuration. For example:
+
+```hcl
+Copy
+resource "aws_kms_key" "project-kms" {
+  description = "KMS key for project"
+  tags = merge(
+    var.tags,
+    {
+      Name = "project-kms-key"
+    },
+  )
+}
+```
+(screenshot)
+(screenshot)
+
+### IAM Best Practices
+Principle of Least Privilege
+
+Grant minimum permissions needed
+Regularly review and revoke unused permissions
+Use specific resource ARNs when possible
+Role Usage
+
+Use roles instead of access keys
+Rotate credentials regularly
+Never hardcode credentials
+
+Security Considerations
+```hcl
+# Example of restricted policy
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject"],
+      "Resource": ["arn:aws:s3:::my-bucket/*"],
+      "Condition": {
+        "StringEquals": {"aws:PrincipalTag/Environment": "Production"}
+      }
+    }
+  ]
+}
+```
 ## Security Groups
 
 Security groups act as virtual firewalls for your instances to control inbound and outbound traffic.
