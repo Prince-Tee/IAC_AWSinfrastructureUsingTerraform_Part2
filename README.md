@@ -528,18 +528,18 @@ This section explains the Terraform code used to create **private** and **public
 - **`route_table_id`**: Specifies the public route table to associate with.
 
 Route Tables Configuration in Terraform
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Route%20Tables%20Configuration%20in%20Terraform.PNG)
 
 Route Tables Created in AWS Console
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Route%20Tables%20Created%20in%20AWS%20Console.PNG)
 
 ### Public Route Table Details
-(screenshot)
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Public%20Route%20Table%20Details.PNG)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Public%20Subnet%20Associations.PNG)
 
 ### Private Route Table Details
-(screenshot)
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Private%20Route%20Table%20Details.PNG)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Private%20Subnet%20Associations.PNG)
 
 ## AWS Identity and Access Management (IAM)
 
@@ -604,7 +604,7 @@ Explaining the Terraform code used to create an **IAM Role** in AWS.
    - **`merge()`**: Combines the default tags (`var.tags`) with a resource-specific tag (`Name`).  
    - **`Name = "aws assume role"`**: Assigns a name tag to the role.
 
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/creating%20aws%20iam%20assume%20role.PNG)
 
 ### IAM Policies
 
@@ -734,7 +734,7 @@ Explaining the Terraform code used to create **IAM Policies** in AWS.
    - **`Action = "kms:Decrypt"`**: Allows the `Decrypt` action on the specified KMS key.  
    - **`Effect = "Allow"`**: Grants permission for the action.  
    - **`Resource = aws_kms_key.project-kms.arn`**: Specifies the KMS key that can be decrypted.
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/creating%20iam%20policy%20inside%20the%20same%20file.PNG)
 
 ### Attaching Policy to Role in the same File
 ```hcl
@@ -755,7 +755,7 @@ Explaining the Terraform code used to attach an **IAM Policy** to an **IAM Role*
 3. **`policy_arn = aws_iam_policy.ec2_policy.arn`**  
    - Specifies the ARN (Amazon Resource Name) of the IAM Policy to attach.  
    - References the policy named `policy`.
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/attaching%20policy%20to%20the%20role%20we%20created.PNG)
 
 ### Instance Profiles
 
@@ -769,10 +769,10 @@ resource "aws_iam_instance_profile" "ip" {
   role = aws_iam_role.ec2_instance_role.name
 }
 ```
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/instance%20profile.PNG)
 
 IAM Roles and Policies in the Code Phase after tf-plan and tf-apply
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/IAM%20Roles%20and%20Policies%20in%20the%20Code%20Phase%20after%20tf-plan%20and%20tf-apply.PNG)
 
 If you encounter and Error "aws_kms_key.project-kms Not Declared"
 Solution:
@@ -790,8 +790,8 @@ resource "aws_kms_key" "project-kms" {
   )
 }
 ```
-(screenshot)
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/IAM%20Roles%20and%20Policies%20in%20the%20Code%20Phase%20after%20tf-plan%20and%20tf-apply2.PNG)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/IAM%20Roles%20and%20Policies%20in%20AWS%20Console.PNG)
 
 ### IAM Best Practices
 Principle of Least Privilege
