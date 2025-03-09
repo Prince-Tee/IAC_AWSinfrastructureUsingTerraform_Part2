@@ -480,7 +480,7 @@ resource "aws_route_table_association" "public-subnets-assoc" {
 }
 ```
 
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/content%20of%20route_tables%20tf.PNG)
 
 This section explains the Terraform code used to create **private** and **public route tables** and associate them with subnets.
 
