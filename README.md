@@ -827,22 +827,34 @@ Security Considerations
 Security groups act as virtual firewalls for your instances to control inbound and outbound traffic.
 
 #### Creating Security Groups
+Create a new file security.tf:
 
+#### External Load Balancer Security Group
 ```hcl
+# Security group for external ALB
 resource "aws_security_group" "ext-alb-sg" {
   name        = "ext-alb-sg"
   vpc_id      = aws_vpc.main.id
-  description = "Allow TLS inbound traffic"
+  description = "Allow HTTP/HTTPS inbound traffic"
 
   ingress {
-    description = "HTTP"
+    description = "Allow HTTP connections"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    description = "Allow SSH connections"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
+    description = "Allow all traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -858,8 +870,566 @@ resource "aws_security_group" "ext-alb-sg" {
 }
 ```
 
-- **ingress**: This allows inbound HTTP traffic.
-- **egress**: This allows all outbound traffic.
+Explaining the Terraform code used to create a **KMS Key** for encryption and a **Security Group** for an external Application Load Balancer (ALB).
+#### **2. Create Security Group for External ALB**
+
+1. **`resource "aws_security_group" "ext-alb-sg" {`**  
+   - Declares a Terraform resource of type `aws_security_group` named `ext-alb-sg`. This will create a security group in AWS.
+
+2. **`name = "ext-alb-sg"`**  
+   - Specifies the name of the security group.
+
+3. **`vpc_id = aws_vpc.main.id`**  
+   - Associates the security group with the VPC.
+
+4. **`description = "Allow HTTP/HTTPS inbound traffic"`**  
+   - Provides a description for the security group.
+
+5. **`ingress { ... }`**  
+   - Defines inbound rules for the security group.  
+   - **`description = "Allow HTTP connections"`**: Allows HTTP traffic on port 80.  
+   - **`description = "Allow SSH connections"`**: Allows SSH traffic on port 22.  
+   - **`cidr_blocks = ["0.0.0.0/0"]`**: Allows traffic from any IP address.
+
+6. **`egress { ... }`**  
+   - Defines outbound rules for the security group.  
+   - **`description = "Allow all traffic"`**: Allows all outbound traffic.  
+   - **`protocol = "-1"`**: Applies to all protocols.  
+   - **`cidr_blocks = ["0.0.0.0/0"]`**: Allows traffic to any IP address.
+
+7. **`tags = merge(var.tags, { Name = "ext-alb-sg" })`**  
+   - Adds tags to the security group.  
+   - **`merge()`**: Combines the default tags (`var.tags`) with a resource-specific tag (`Name`).  
+   - **`Name = "ext-alb-sg"`**: Assigns a name tag to the security group.
+
+(screenshot)
+
+#### Bastion Host Security Group
+```hcl
+resource "aws_security_group" "bastion_sg" {
+  name        = "bastion_sg"
+  vpc_id      = aws_vpc.main.id
+  description = "Security group for bastion host SSH access"
+
+  ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "Bastion-SG"
+    },
+  )
+}
+```
+
+Explaining the Terraform code used to create a **Security Group** for a Bastion Host.
+
+1. **`resource "aws_security_group" "bastion_sg" {`**  
+   - Declares a Terraform resource of type `aws_security_group` named `bastion_sg`. This will create a security group in AWS.
+
+2. **`name = "bastion_sg"`**  
+   - Specifies the name of the security group.
+
+3. **`vpc_id = aws_vpc.main.id`**  
+   - Associates the security group with the VPC.
+
+4. **`description = "Security group for bastion host SSH access"`**  
+   - Provides a description for the security group.
+
+5. **`ingress { ... }`**  
+   - Defines inbound rules for the security group.  
+   - **`description = "SSH"`**: Allows SSH traffic on port 22.  
+   - **`cidr_blocks = ["0.0.0.0/0"]`**: Allows SSH access from any IP address.
+
+6. **`egress { ... }`**  
+   - Defines outbound rules for the security group.  
+   - **`from_port = 0`**: Allows all outbound traffic.  
+   - **`to_port = 0`**: Allows all outbound traffic.  
+   - **`protocol = "-1"`**: Applies to all protocols.  
+   - **`cidr_blocks = ["0.0.0.0/0"]`**: Allows traffic to any IP address.
+
+7. **`tags = merge(var.tags, { Name = "Bastion-SG" })`**  
+   - Adds tags to the security group.  
+   - **`merge()`**: Combines the default tags (`var.tags`) with a resource-specific tag (`Name`).  
+   - **`Name = "Bastion-SG"`**: Assigns a name tag to the security group.
+(screenshot)
+
+#### Nginx Security Group
+```hcl
+resource "aws_security_group" "nginx-sg" {
+  name   = "nginx-sg"
+  vpc_id = aws_vpc.main.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "nginx-SG"
+    },
+  )
+}
+
+# Nginx Security Group Rules
+resource "aws_security_group_rule" "inbound-nginx-https" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.ext-alb-sg.id
+  security_group_id        = aws_security_group.nginx-sg.id
+}
+
+resource "aws_security_group_rule" "inbound-bastion-ssh" {
+  type                     = "ingress"
+  from_port                = 22
+  to_port                  = 22
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.bastion_sg.id
+  security_group_id        = aws_security_group.nginx-sg.id
+}
+```
+Explaining the Terraform code used to create a **Security Group** for Nginx and define its inbound rules.
+
+#### **1. Create Nginx Security Group**
+
+1. **`resource "aws_security_group" "nginx-sg" {`**  
+   - Declares a Terraform resource of type `aws_security_group` named `nginx-sg`. This will create a security group in AWS.
+
+2. **`name = "nginx-sg"`**  
+   - Specifies the name of the security group.
+
+3. **`vpc_id = aws_vpc.main.id`**  
+   - Associates the security group with the VPC.
+
+4. **`egress { ... }`**  
+   - Defines outbound rules for the security group.  
+   - **`from_port = 0`**: Allows all outbound traffic.  
+   - **`to_port = 0`**: Allows all outbound traffic.  
+   - **`protocol = "-1"`**: Applies to all protocols.  
+   - **`cidr_blocks = ["0.0.0.0/0"]`**: Allows traffic to any IP address.
+
+5. **`tags = merge(var.tags, { Name = "nginx-SG" })`**  
+   - Adds tags to the security group.  
+   - **`merge()`**: Combines the default tags (`var.tags`) with a resource-specific tag (`Name`).  
+   - **`Name = "nginx-SG"`**: Assigns a name tag to the security group.
+
+### **2. Nginx Security Group Rules**
+
+1. **`resource "aws_security_group_rule" "inbound-nginx-https" {`**  
+   - Declares a Terraform resource of type `aws_security_group_rule` named `inbound-nginx-https`. This will create an inbound rule for the Nginx security group.
+
+2. **`type = "ingress"`**  
+   - Specifies that this is an inbound rule.
+
+3. **`from_port = 443`**  
+   - Allows traffic on port 443 (HTTPS).
+
+4. **`to_port = 443`**  
+   - Allows traffic on port 443 (HTTPS).
+
+5. **`protocol = "tcp"`**  
+   - Specifies the TCP protocol.
+
+6. **`source_security_group_id = aws_security_group.ext-alb-sg.id`**  
+   - Allows traffic from the external ALB security group.
+
+7. **`security_group_id = aws_security_group.nginx-sg.id`**  
+   - Associates this rule with the Nginx security group.
+
+
+#### **3. Bastion Host SSH Access Rule**
+
+1. **`resource "aws_security_group_rule" "inbound-bastion-ssh" {`**  
+   - Declares a Terraform resource of type `aws_security_group_rule` named `inbound-bastion-ssh`. This will create an inbound rule for SSH access.
+
+2. **`type = "ingress"`**  
+   - Specifies that this is an inbound rule.
+
+3. **`from_port = 22`**  
+   - Allows traffic on port 22 (SSH).
+
+4. **`to_port = 22`**  
+   - Allows traffic on port 22 (SSH).
+
+5. **`protocol = "tcp"`**  
+   - Specifies the TCP protocol.
+
+6. **`source_security_group_id = aws_security_group.bastion_sg.id`**  
+   - Allows traffic from the Bastion Host security group.
+
+7. **`security_group_id = aws_security_group.nginx-sg.id`**  
+   - Associates this rule with the Nginx security group.
+(screenshot)
+
+#### Internal ALB Security Group
+```hcl
+resource "aws_security_group" "int-alb-sg" {
+  name   = "int-alb-sg"
+  vpc_id = aws_vpc.main.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "int-alb-sg"
+    },
+  )
+}
+
+resource "aws_security_group_rule" "inbound-ialb-https" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.nginx-sg.id
+  security_group_id        = aws_security_group.int-alb-sg.id
+}
+```
+Explaining the Terraform code used to create a **Security Group** for an Internal ALB and define its inbound rules.
+
+#### **1. Create Internal ALB Security Group**
+
+1. **`resource "aws_security_group" "int-alb-sg" {`**  
+   - Declares a Terraform resource of type `aws_security_group` named `int-alb-sg`. This will create a security group in AWS.
+
+2. **`name = "int-alb-sg"`**  
+   - Specifies the name of the security group.
+
+3. **`vpc_id = aws_vpc.main.id`**  
+   - Associates the security group with the VPC.
+
+4. **`egress { ... }`**  
+   - Defines outbound rules for the security group.  
+   - **`from_port = 0`**: Allows all outbound traffic.  
+   - **`to_port = 0`**: Allows all outbound traffic.  
+   - **`protocol = "-1"`**: Applies to all protocols.  
+   - **`cidr_blocks = ["0.0.0.0/0"]`**: Allows traffic to any IP address.
+
+5. **`tags = merge(var.tags, { Name = "int-alb-sg" })`**  
+   - Adds tags to the security group.  
+   - **`merge()`**: Combines the default tags (`var.tags`) with a resource-specific tag (`Name`).  
+   - **`Name = "int-alb-sg"`**: Assigns a name tag to the security group.
+
+#### **2. Internal ALB Security Group Rule**
+
+1. **`resource "aws_security_group_rule" "inbound-ialb-https" {`**  
+   - Declares a Terraform resource of type `aws_security_group_rule` named `inbound-ialb-https`. This will create an inbound rule for the Internal ALB security group.
+
+2. **`type = "ingress"`**  
+   - Specifies that this is an inbound rule.
+
+3. **`from_port = 443`**  
+   - Allows traffic on port 443 (HTTPS).
+
+4. **`to_port = 443`**  
+   - Allows traffic on port 443 (HTTPS).
+
+5. **`protocol = "tcp"`**  
+   - Specifies the TCP protocol.
+
+6. **`source_security_group_id = aws_security_group.nginx-sg.id`**  
+   - Allows traffic from the Nginx security group.
+
+7. **`security_group_id = aws_security_group.int-alb-sg.id`**  
+   - Associates this rule with the Internal ALB security group.
+(screenshot) 
+
+#### Webserver Security Group
+```hcl
+resource "aws_security_group" "webserver-sg" {
+  name   = "webserver-sg"
+  vpc_id = aws_vpc.main.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "webserver-sg"
+    },
+  )
+}
+
+# Webserver Security Group Rules
+resource "aws_security_group_rule" "inbound-web-https" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.int-alb-sg.id
+  security_group_id        = aws_security_group.webserver-sg.id
+}
+
+resource "aws_security_group_rule" "inbound-web-ssh" {
+  type                     = "ingress"
+  from_port                = 22
+  to_port                  = 22
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.bastion_sg.id
+  security_group_id        = aws_security_group.webserver-sg.id
+}
+```
+This section explains the Terraform code used to create a **Security Group** for a Web Server and define its inbound rules.
+
+#### **1. Create Web Server Security Group**
+
+1. **`resource "aws_security_group" "webserver-sg" {`**  
+   - Declares a Terraform resource of type `aws_security_group` named `webserver-sg`. This will create a security group in AWS.
+
+2. **`name = "webserver-sg"`**  
+   - Specifies the name of the security group.
+
+3. **`vpc_id = aws_vpc.main.id`**  
+   - Associates the security group with the VPC.
+
+4. **`egress { ... }`**  
+   - Defines outbound rules for the security group.  
+   - **`from_port = 0`**: Allows all outbound traffic.  
+   - **`to_port = 0`**: Allows all outbound traffic.  
+   - **`protocol = "-1"`**: Applies to all protocols.  
+   - **`cidr_blocks = ["0.0.0.0/0"]`**: Allows traffic to any IP address.
+
+5. **`tags = merge(var.tags, { Name = "webserver-sg" })`**  
+   - Adds tags to the security group.  
+   - **`merge()`**: Combines the default tags (`var.tags`) with a resource-specific tag (`Name`).  
+   - **`Name = "webserver-sg"`**: Assigns a name tag to the security group.
+
+#### **2. Web Server Security Group Rules**
+
+1. **`resource "aws_security_group_rule" "inbound-web-https" {`**  
+   - Declares a Terraform resource of type `aws_security_group_rule` named `inbound-web-https`. This will create an inbound rule for HTTPS traffic.
+
+2. **`type = "ingress"`**  
+   - Specifies that this is an inbound rule.
+
+3. **`from_port = 443`**  
+   - Allows traffic on port 443 (HTTPS).
+
+4. **`to_port = 443`**  
+   - Allows traffic on port 443 (HTTPS).
+
+5. **`protocol = "tcp"`**  
+   - Specifies the TCP protocol.
+
+6. **`source_security_group_id = aws_security_group.int-alb-sg.id`**  
+   - Allows traffic from the Internal ALB security group.
+
+7. **`security_group_id = aws_security_group.webserver-sg.id`**  
+   - Associates this rule with the Web Server security group.
+
+#### **3. Bastion Host SSH Access Rule**
+
+1. **`resource "aws_security_group_rule" "inbound-web-ssh" {`**  
+   - Declares a Terraform resource of type `aws_security_group_rule` named `inbound-web-ssh`. This will create an inbound rule for SSH access.
+
+2. **`type = "ingress"`**  
+   - Specifies that this is an inbound rule.
+
+3. **`from_port = 22`**  
+   - Allows traffic on port 22 (SSH).
+
+4. **`to_port = 22`**  
+   - Allows traffic on port 22 (SSH).
+
+5. **`protocol = "tcp"`**  
+   - Specifies the TCP protocol.
+
+6. **`source_security_group_id = aws_security_group.bastion_sg.id`**  
+   - Allows traffic from the Bastion Host security group.
+
+7. **`security_group_id = aws_security_group.webserver-sg.id`**  
+   - Associates this rule with the Web Server security group.
+(screenshot)
+
+#### Data Layer Security Group
+```hcl
+resource "aws_security_group" "datalayer-sg" {
+  name   = "datalayer-sg"
+  vpc_id = aws_vpc.main.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "datalayer-sg"
+    },
+  )
+}
+
+# Data Layer Security Group Rules
+resource "aws_security_group_rule" "inbound-nfs-port" {
+  type                     = "ingress"
+  from_port                = 2049
+  to_port                  = 2049
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.webserver-sg.id
+  security_group_id        = aws_security_group.datalayer-sg.id
+}
+
+resource "aws_security_group_rule" "inbound-mysql-bastion" {
+  type                     = "ingress"
+  from_port                = 3306
+  to_port                  = 3306
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.bastion_sg.id
+  security_group_id        = aws_security_group.datalayer-sg.id
+}
+
+resource "aws_security_group_rule" "inbound-mysql-webserver" {
+  type                     = "ingress"
+  from_port                = 3306
+  to_port                  = 3306
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.webserver-sg.id
+  security_group_id        = aws_security_group.datalayer-sg.id
+}
+```
+This section explains the Terraform code used to create a **Security Group** for the Data Layer and define its inbound rules.
+
+### **1. Create Data Layer Security Group**
+
+1. **`resource "aws_security_group" "datalayer-sg" {`**  
+   - Declares a Terraform resource of type `aws_security_group` named `datalayer-sg`. This will create a security group in AWS.
+
+2. **`name = "datalayer-sg"`**  
+   - Specifies the name of the security group.
+
+3. **`vpc_id = aws_vpc.main.id`**  
+   - Associates the security group with the VPC.
+
+4. **`egress { ... }`**  
+   - Defines outbound rules for the security group.  
+   - **`from_port = 0`**: Allows all outbound traffic.  
+   - **`to_port = 0`**: Allows all outbound traffic.  
+   - **`protocol = "-1"`**: Applies to all protocols.  
+   - **`cidr_blocks = ["0.0.0.0/0"]`**: Allows traffic to any IP address.
+
+5. **`tags = merge(var.tags, { Name = "datalayer-sg" })`**  
+   - Adds tags to the security group.  
+   - **`merge()`**: Combines the default tags (`var.tags`) with a resource-specific tag (`Name`).  
+   - **`Name = "datalayer-sg"`**: Assigns a name tag to the security group.
+
+### **2. Data Layer Security Group Rules**
+
+1. **`resource "aws_security_group_rule" "inbound-nfs-port" {`**  
+   - Declares a Terraform resource of type `aws_security_group_rule` named `inbound-nfs-port`. This will create an inbound rule for NFS traffic.
+
+2. **`type = "ingress"`**  
+   - Specifies that this is an inbound rule.
+
+3. **`from_port = 2049`**  
+   - Allows traffic on port 2049 (NFS).
+
+4. **`to_port = 2049`**  
+   - Allows traffic on port 2049 (NFS).
+
+5. **`protocol = "tcp"`**  
+   - Specifies the TCP protocol.
+
+6. **`source_security_group_id = aws_security_group.webserver-sg.id`**  
+   - Allows traffic from the Web Server security group.
+
+7. **`security_group_id = aws_security_group.datalayer-sg.id`**  
+   - Associates this rule with the Data Layer security group.
+
+### **3. Bastion Host MySQL Access Rule**
+
+1. **`resource "aws_security_group_rule" "inbound-mysql-bastion" {`**  
+   - Declares a Terraform resource of type `aws_security_group_rule` named `inbound-mysql-bastion`. This will create an inbound rule for MySQL traffic from the Bastion Host.
+
+2. **`type = "ingress"`**  
+   - Specifies that this is an inbound rule.
+
+3. **`from_port = 3306`**  
+   - Allows traffic on port 3306 (MySQL).
+
+4. **`to_port = 3306`**  
+   - Allows traffic on port 3306 (MySQL).
+
+5. **`protocol = "tcp"`**  
+   - Specifies the TCP protocol.
+
+6. **`source_security_group_id = aws_security_group.bastion_sg.id`**  
+   - Allows traffic from the Bastion Host security group.
+
+7. **`security_group_id = aws_security_group.datalayer-sg.id`**  
+   - Associates this rule with the Data Layer security group.
+
+### **4. Web Server MySQL Access Rule**
+
+1. **`resource "aws_security_group_rule" "inbound-mysql-webserver" {`**  
+   - Declares a Terraform resource of type `aws_security_group_rule` named `inbound-mysql-webserver`. This will create an inbound rule for MySQL traffic from the Web Server.
+
+2. **`type = "ingress"`**  
+   - Specifies that this is an inbound rule.
+
+3. **`from_port = 3306`**  
+   - Allows traffic on port 3306 (MySQL).
+
+4. **`to_port = 3306`**  
+   - Allows traffic on port 3306 (MySQL).
+
+5. **`protocol = "tcp"`**  
+   - Specifies the TCP protocol.
+
+6. **`source_security_group_id = aws_security_group.webserver-sg.id`**  
+   - Allows traffic from the Web Server security group.
+
+7. **`security_group_id = aws_security_group.datalayer-sg.id`**  
+   - Associates this rule with the Data Layer security group.
+(screenshot)
+
+#### Security Group Relationships
+
+```graph TD
+    A[External ALB SG] -->|HTTPS| B[Nginx SG]
+    C[Bastion SG] -->|SSH| B
+    B -->|HTTPS| D[Internal ALB SG]
+    D -->|HTTPS| E[Webserver SG]
+    C -->|SSH| E
+    E -->|NFS| F[Data Layer SG]
+    E -->|MySQL| F
+    C -->|MySQL| F
+```
+(screenshot)
+(screenshot)
+(screenshot)
 
 ## Certificates with AWS Certificate Manager
 
