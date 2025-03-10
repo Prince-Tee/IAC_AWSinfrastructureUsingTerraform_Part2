@@ -902,7 +902,7 @@ Explaining the Terraform code used to create a **KMS Key** for encryption and a 
    - **`merge()`**: Combines the default tags (`var.tags`) with a resource-specific tag (`Name`).  
    - **`Name = "ext-alb-sg"`**: Assigns a name tag to the security group.
 
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/External%20Load%20Balancer%20Security%20Group.PNG)
 
 #### Bastion Host Security Group
 ```hcl
@@ -965,7 +965,7 @@ Explaining the Terraform code used to create a **Security Group** for a Bastion 
    - Adds tags to the security group.  
    - **`merge()`**: Combines the default tags (`var.tags`) with a resource-specific tag (`Name`).  
    - **`Name = "Bastion-SG"`**: Assigns a name tag to the security group.
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Bastion%20Host%20Security%20Group.PNG)
 
 #### Nginx Security Group
 ```hcl
@@ -1078,7 +1078,7 @@ Explaining the Terraform code used to create a **Security Group** for Nginx and 
 
 7. **`security_group_id = aws_security_group.nginx-sg.id`**  
    - Associates this rule with the Nginx security group.
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Nginx%20Security%20Group.PNG)
 
 #### Internal ALB Security Group
 ```hcl
@@ -1157,7 +1157,7 @@ Explaining the Terraform code used to create a **Security Group** for an Interna
 
 7. **`security_group_id = aws_security_group.int-alb-sg.id`**  
    - Associates this rule with the Internal ALB security group.
-(screenshot) 
+![(screenshot) ](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Internal%20ALB%20Security%20Group.PNG)
 
 #### Webserver Security Group
 ```hcl
@@ -1269,7 +1269,7 @@ This section explains the Terraform code used to create a **Security Group** for
 
 7. **`security_group_id = aws_security_group.webserver-sg.id`**  
    - Associates this rule with the Web Server security group.
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Webserver%20Security%20Group.PNG)
 
 #### Data Layer Security Group
 ```hcl
@@ -1413,7 +1413,7 @@ This section explains the Terraform code used to create a **Security Group** for
 
 7. **`security_group_id = aws_security_group.datalayer-sg.id`**  
    - Associates this rule with the Data Layer security group.
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Data%20Layer%20Security%20Group.PNG)
 
 #### Security Group Relationships
 
@@ -1427,9 +1427,9 @@ This section explains the Terraform code used to create a **Security Group** for
     E -->|MySQL| F
     C -->|MySQL| F
 ```
-(screenshot)
-(screenshot)
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Security%20Groups%20in%20the%20Code%20Phase%20after%20tf-plan%20and%20tf-apply.PNG)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Security%20Groups%20in%20the%20Code%20Phase%20after%20tf-plan%20and%20tf-apply1.PNG)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Security%20Groups%20in%20AWS%20Console.PNG)
 
 ## Certificates with AWS Certificate Manager
 
