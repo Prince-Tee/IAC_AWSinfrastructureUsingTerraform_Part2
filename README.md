@@ -1417,7 +1417,8 @@ This section explains the Terraform code used to create a **Security Group** for
 
 #### Security Group Relationships
 
-graph TD
+```mermaid
+graph TD;
     A[External ALB SG] -->|HTTPS| B[Nginx SG]
     C[Bastion SG] -->|SSH| B
     B -->|HTTPS| D[Internal ALB SG]
@@ -1426,6 +1427,7 @@ graph TD
     E -->|NFS| F[Data Layer SG]
     E -->|MySQL| F
     C -->|MySQL| F
+```
 
 ![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Security%20Groups%20in%20the%20Code%20Phase%20after%20tf-plan%20and%20tf-apply.PNG)
 ![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Security%20Groups%20in%20the%20Code%20Phase%20after%20tf-plan%20and%20tf-apply1.PNG)
