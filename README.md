@@ -1609,9 +1609,9 @@ Explaining the Terraform code used to create **Target Groups** for Nginx, WordPr
    - Adds tags to the target group.  
    - **`merge()`**: Combines the default tags (`var.tags`) with a resource-specific tag (`Name`).  
    - **`Name = "tooling-tgt"`**: Assigns a name tag to the target group.
-(screenshot)
-(screenshot)
-(screenshot)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/content%20of%20target-groups%20tf.PNG)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/target%20group%20after%20terraform%20plan%20and%20terraform%20apply.PNG)
+![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Target%20Groups%20Created%20in%20AWS%20Console.PNG)
 
 ## Certificates with AWS Certificate Manager
 
