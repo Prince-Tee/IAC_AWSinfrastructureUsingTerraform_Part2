@@ -1433,6 +1433,186 @@ graph TD;
 ![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Security%20Groups%20in%20the%20Code%20Phase%20after%20tf-plan%20and%20tf-apply1.PNG)
 ![(screenshot)](https://github.com/Prince-Tee/IAC_AWSinfrastructureUsingTerraform_Part2/blob/main/Screenshot%20from%20my%20local%20environmrnt/Security%20Groups%20in%20AWS%20Console.PNG)
 
+
+## Target Groups and Load Balancer Configuration
+
+### Target Groups Setup
+Target Groups are used to route requests to registered targets (EC2 instances). We will now create three target groups for our infrastructure:
+
+Nginx Target Group
+WordPress Target Group
+Tooling Target Group
+Create a new file target-groups.tf:
+
+```hcl
+# Nginx Target Group
+resource "aws_lb_target_group" "nginx-tgt" {
+  name        = "nginx-tgt"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "instance"
+  
+  health_check {
+    interval            = 10
+    path               = "/healthz"
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    timeout             = 5
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "nginx-tgt"
+    },
+  )
+}
+
+# WordPress Target Group
+resource "aws_lb_target_group" "wordpress-tgt" {
+  name        = "wordpress-tgt"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "instance"
+  
+  health_check {
+    interval            = 10
+    path               = "/healthz"
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    timeout             = 5
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "wordpress-tgt"
+    },
+  )
+}
+
+# Tooling Target Group
+resource "aws_lb_target_group" "tooling-tgt" {
+  name        = "tooling-tgt"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "instance"
+  
+  health_check {
+    interval            = 10
+    path               = "/healthz"
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    timeout             = 5
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "tooling-tgt"
+    },
+  )
+}
+```
+Explaining the Terraform code used to create **Target Groups** for Nginx, WordPress, and Tooling.
+
+#### **1. Nginx Target Group**
+
+1. **`resource "aws_lb_target_group" "nginx-tgt" {`**  
+   - Declares a Terraform resource of type `aws_lb_target_group` named `nginx-tgt`. This will create a target group for Nginx.
+
+2. **`name = "nginx-tgt"`**  
+   - Specifies the name of the target group.
+
+3. **`port = 80`**  
+   - Listens on port 80 (HTTP).
+
+4. **`protocol = "HTTP"`**  
+   - Uses the HTTP protocol.
+
+5. **`vpc_id = aws_vpc.main.id`**  
+   - Associates the target group with the VPC.
+
+6. **`target_type = "instance"`**  
+   - Routes traffic to EC2 instances.
+
+7. **`health_check { ... }`**  
+   - Configures health checks for the target group.  
+   - **`interval = 10`**: Checks every 10 seconds.  
+   - **`path = "/healthz"`**: Uses `/healthz` for health checks.  
+   - **`healthy_threshold = 2`**: Requires 2 successful checks to mark as healthy.  
+   - **`unhealthy_threshold = 2`**: Requires 2 failed checks to mark as unhealthy.  
+   - **`timeout = 5`**: Sets the health check timeout to 5 seconds.
+
+8. **`tags = merge(var.tags, { Name = "nginx-tgt" })`**  
+   - Adds tags to the target group.  
+   - **`merge()`**: Combines the default tags (`var.tags`) with a resource-specific tag (`Name`).  
+   - **`Name = "nginx-tgt"`**: Assigns a name tag to the target group.
+
+#### **2. WordPress Target Group**
+
+1. **`resource "aws_lb_target_group" "wordpress-tgt" {`**  
+   - Declares a Terraform resource of type `aws_lb_target_group` named `wordpress-tgt`. This will create a target group for WordPress.
+
+2. **`name = "wordpress-tgt"`**  
+   - Specifies the name of the target group.
+
+3. **`port = 80`**  
+   - Listens on port 80 (HTTP).
+
+4. **`protocol = "HTTP"`**  
+   - Uses the HTTP protocol.
+
+5. **`vpc_id = aws_vpc.main.id`**  
+   - Associates the target group with the VPC.
+
+6. **`target_type = "instance"`**  
+   - Routes traffic to EC2 instances.
+
+7. **`health_check { ... }`**  
+   - Configures health checks for the target group.  
+   - Uses the same health check settings as the Nginx target group.
+
+8. **`tags = merge(var.tags, { Name = "wordpress-tgt" })`**  
+   - Adds tags to the target group.  
+   - **`merge()`**: Combines the default tags (`var.tags`) with a resource-specific tag (`Name`).  
+   - **`Name = "wordpress-tgt"`**: Assigns a name tag to the target group.
+
+#### **3. Tooling Target Group**
+
+1. **`resource "aws_lb_target_group" "tooling-tgt" {`**  
+   - Declares a Terraform resource of type `aws_lb_target_group` named `tooling-tgt`. This will create a target group for Tooling.
+
+2. **`name = "tooling-tgt"`**  
+   - Specifies the name of the target group.
+
+3. **`port = 80`**  
+   - Listens on port 80 (HTTP).
+
+4. **`protocol = "HTTP"`**  
+   - Uses the HTTP protocol.
+
+5. **`vpc_id = aws_vpc.main.id`**  
+   - Associates the target group with the VPC.
+
+6. **`target_type = "instance"`**  
+   - Routes traffic to EC2 instances.
+
+7. **`health_check { ... }`**  
+   - Configures health checks for the target group.  
+   - Uses the same health check settings as the Nginx target group.
+
+8. **`tags = merge(var.tags, { Name = "tooling-tgt" })`**  
+   - Adds tags to the target group.  
+   - **`merge()`**: Combines the default tags (`var.tags`) with a resource-specific tag (`Name`).  
+   - **`Name = "tooling-tgt"`**: Assigns a name tag to the target group.
+(screenshot)
+(screenshot)
+(screenshot)
+
 ## Certificates with AWS Certificate Manager
 
 AWS Certificate Manager (ACM) allows you to provision, manage, and deploy SSL/TLS certificates.
